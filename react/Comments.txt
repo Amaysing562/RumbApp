@@ -1,0 +1,136 @@
+import React, { useState, useEffect, useCallback } from "react";
+import debug from "debug";
+import commentService from "services/commentService";
+import CommentsForm from "./CommentsForm";
+import CommentCard from "./CommentCard";
+import { Container } from "react-bootstrap";
+import "./styleComments.css";
+import propTypes from "prop-types";
+
+const _logger = debug.extend("comments");
+
+function Comments(props) {
+  const userLoggedIn = props.userLoggedIn;
+  const [entityTypes] = useState({
+    entityTypeId: 2,
+    entityId: 1,
+  });
+  const [commentData, setCommentData] = useState({
+    commentsArray: [],
+    CommentComponents: [],
+  });
+
+  useEffect(() => {
+    commentService.getByEntityId(1).then(onGetSuccess).catch(onGetError);
+  }, []);
+  const filterComments = (comments) => {
+    let result = false;
+    if (comments.parentId === 0) {
+      result = true;
+    }
+    return result;
+  };
+
+  const onGetSuccess = (data) => {
+    let arrayOfComments = data.items;
+    _logger("All Comments", arrayOfComments);
+    const rootComments = arrayOfComments.filter(filterComments);
+    _logger("Root comments", rootComments);
+
+    setCommentData((prevState) => {
+      const cd = { ...prevState };
+
+      cd.commentsArray = rootComments;
+      cd.CommentComponents = rootComments.reverse().map(mapComments);
+
+      return cd;
+    });
+  };
+
+  const onGetError = (err) => {
+    _logger("Comment Get Error", err);
+  };
+
+  const commentDeleteHandler = useCallback((Id) => {
+    _logger("I AM RIGHT HERE", commentData);
+    const filterDeleted = (aComment) => {
+      let result = true;
+      if (aComment.id === Id) {
+        result = false;
+      }
+      return result;
+    };
+
+    setCommentData((prevState) => {
+      var newList = prevState.commentsArray.filter(filterDeleted);
+      const cd = { ...prevState };
+      cd.commentsArray = newList;
+      cd.CommentComponents = newList.map(mapComments);
+      return cd;
+    });
+  }, []);
+
+  const commentAddHandler = (formValues) => {
+    commentService
+      .add(formValues)
+      .then((response) => {
+        onAddSuccess(response, formValues);
+      })
+      .catch(onAddError);
+  };
+  const onAddSuccess = (response) => {
+    _logger("Comment Add Success", response);
+    commentService.getByEntityId(1).then(onGetSuccess).catch(onGetError);
+  };
+  const onAddError = (err) => {
+    _logger("Comment Add Error", err);
+  };
+  const commentUpdateHandler = (id, values) => {
+    commentService
+      .update(id, values)
+      .then(onUpdateSuccess)
+      .catch(onUpdateError);
+  };
+  const onUpdateSuccess = (response) => {
+    _logger("Comment Update Success", response);
+    commentService.getByEntityId(1).then(onGetSuccess).catch(onGetError);
+  };
+  const onUpdateError = (err) => {
+    _logger("Comment Update Error", err);
+  };
+  const mapComments = (aComment) => {
+    return (
+      <CommentCard
+        comment={aComment}
+        entity={entityTypes}
+        userLoggedIn={userLoggedIn}
+        key={"ListA-" + aComment.id}
+        onCommentDelete={commentDeleteHandler}
+        commentUpdateHandler={commentUpdateHandler}
+      />
+    );
+  };
+
+  return (
+    <React.Fragment>
+      <Container className="card comments-display-card">
+        <h1 className="comment-title">Comments</h1>
+        <CommentsForm
+          entity={entityTypes}
+          addHandler={commentAddHandler}
+          updateHandler={commentUpdateHandler}
+        />{" "}
+        <br /> <hr className="styleComment-hr" />
+        <Container className="styleComment-scroll-container">
+          <div>{commentData.CommentComponents}</div>
+        </Container>
+      </Container>
+    </React.Fragment>
+  );
+}
+Comments.propTypes = {
+  userLoggedIn: propTypes.shape({
+    id: propTypes.number.isRequired,
+  }),
+};
+export default Comments;

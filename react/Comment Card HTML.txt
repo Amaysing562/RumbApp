@@ -1,0 +1,343 @@
+import React, { useState, useEffect, useCallback } from "react";
+import "./styleComments.css";
+import RepliesForm from "./replies/RepliesForm";
+import ReplyCard from "./replies/ReplyCard";
+import commentService from "services/commentService";
+import Dropdown from "react-bootstrap/Dropdown";
+import { Container, Button } from "react-bootstrap";
+import Card from "react-bootstrap/Card";
+import basicSchema from "../../schemas/commentsSchema";
+import debug from "debug";
+import propTypes from "prop-types";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+
+const _logger = debug.extend("commentsCard");
+const commentSchema = basicSchema;
+
+function CommentCard(props) {
+  const loggedInUser = props.userLoggedIn;
+  const aComment = props.comment;
+  const commentCreator = aComment.createdBy?.id;
+  const currentUser = loggedInUser.id === commentCreator;
+  const entityTypeId = props.entity.entityTypeId;
+  const entityId = props.entity.entityId;
+  const formatDate = new Date(aComment.dateCreated).toLocaleString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  const [replyData, setReplyData] = useState({
+    repliesArray: [],
+    replyComponents: [],
+  });
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editCommentForm, setEditCommentForm] = useState({
+    id: aComment.id,
+    subject: aComment.subject,
+    text: aComment.text,
+    entityTypeId,
+    entityId,
+    isDeleted: false,
+  });
+  useEffect(() => {
+    commentService
+      .getByEntityId(1)
+      .then(onGetReplySuccess)
+      .catch(onGetReplyError);
+  }, []);
+
+  const onDeleteClick = () => {
+    commentService
+      .delete(aComment.id)
+      .then(onDeleteSuccess)
+      .catch(onDeleteError);
+  };
+  const onDeleteSuccess = () => {
+    _logger("Comment deleted");
+    props.onCommentDelete(aComment.id);
+  };
+  const onDeleteError = () => {
+    _logger("not deleted");
+  };
+  const addReplyHandler = (formValues) => {
+    commentService
+      .add(formValues)
+      .then(onAddReplySuccess)
+      .catch(onAddReplyError);
+  };
+  const onAddReplySuccess = (response) => {
+    _logger("added reply", response);
+    commentService
+      .getByEntityId(1)
+      .then(onGetReplySuccess)
+      .catch(onGetReplyError);
+  };
+  const updateReplyHandler = (id, values) => {
+    commentService
+      .update(id, values)
+      .then(onUpdateReplySuccess)
+      .catch(onUpdateReplyError);
+  };
+  const onUpdateReplySuccess = (response) => {
+    _logger("reply was Edited", response);
+    commentService
+      .getByEntityId(1)
+      .then(onGetReplySuccess)
+      .catch(onGetReplyError);
+  };
+  const onUpdateReplyError = (err) => {
+    _logger(err);
+  };
+  const filterReplies = (aReply) => {
+    let result = false;
+    if (aComment.id === aReply.parentId) {
+      result = true;
+    }
+    return result;
+  };
+  const mapReplies = (aReply) => {
+    return (
+      <ReplyCard
+        entity={props.entity}
+        reply={aReply}
+        parentComment={aComment}
+        userLoggedIn={loggedInUser}
+        key={"ListA-" + aReply.id}
+        onReplyDelete={onDeleteReply}
+        addReplyHandler={addReplyHandler}
+        updateReplyHandler={updateReplyHandler}
+      />
+    );
+  };
+  const onGetReplySuccess = (response) => {
+    let replies = response.items;
+    _logger("this is all comments", replies);
+    const commentReplies = replies.filter(filterReplies);
+    _logger("this is comment replies", commentReplies);
+    setReplyData((prevState) => {
+      const rd = { ...prevState };
+
+      rd.repliesArray = commentReplies;
+      rd.replyComponents = commentReplies.map(mapReplies);
+      return rd;
+    });
+  };
+  const onAddReplyError = (err) => {
+    _logger(err);
+  };
+  const onGetReplyError = (err) => {
+    _logger(err);
+  };
+  const onDeleteReply = useCallback((id) => {
+    const filterDeletedReplies = (aReply) => {
+      let result = true;
+      if (aReply.id === id) {
+        result = false;
+      }
+      return result;
+    };
+
+    setReplyData((prevState) => {
+      var newList = prevState.repliesArray.filter(filterDeletedReplies);
+      const rd = { ...prevState };
+      rd.repliesArray = newList;
+      rd.replyComponents = newList.map(mapReplies);
+      return rd;
+    });
+  }, []);
+  const onEditClick = () => {
+    _logger("edit firing", aComment);
+    setShowEditForm(!showEditForm);
+  };
+  const onEditCommentSubmit = (values) => {
+    _logger("update firing", values);
+    props.commentUpdateHandler(values.id, values);
+    setShowEditForm(!showEditForm);
+    setEditCommentForm({
+      id: aComment.id,
+      subject: aComment.subject,
+      text: aComment.text,
+      entityTypeId,
+      entityId,
+      isDeleted: false,
+    });
+  };
+  return (
+    <React.Fragment>
+      <Container className="card styleComponent-comment-display">
+        <div className="style-comment">
+          <div className="styleComponent-comment-user-info">
+            <Card.Img
+              className="styleComponent-user-image"
+              variant="top"
+              src={aComment.createdBy?.avatarUrl}
+            />
+            <p className="style-user-name">
+              {aComment.createdBy?.firstName} {aComment.createdBy?.lastName}{" "}
+            </p>
+            <p className="styleComponent-comment-date-made">{formatDate}</p>
+
+            {currentUser && (
+              <Dropdown className="styleComponent-dropdown btn-sm">
+                <Dropdown.Toggle id="dropdown-basic">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    fill="currentColor"
+                    className="bi bi-three-dots-vertical"
+                    viewBox="0 0 16 16"
+                  >
+                    <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0m0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0" />
+                  </svg>
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu>
+                  <button
+                    className="btn btn-primary dropdown-item"
+                    onClick={onEditClick}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      className="bi bi-pencil"
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325" />
+                    </svg>
+                    <span className="styleComponent-comment-dropdown-buttons">
+                      Edit
+                    </span>
+                  </button>
+                  <button
+                    className="btn btn-primary dropdown-item"
+                    onClick={onDeleteClick}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      fill="currentColor"
+                      className="bi bi-trash3"
+                      viewBox="0 0 16 16"
+                    >
+                      <path d="M6.5 1h3a.5.5 0 0 1 .5.5v1H6v-1a.5.5 0 0 1 .5-.5M11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3A1.5 1.5 0 0 0 5 1.5v1H1.5a.5.5 0 0 0 0 1h.538l.853 10.66A2 2 0 0 0 4.885 16h6.23a2 2 0 0 0 1.994-1.84l.853-10.66h.538a.5.5 0 0 0 0-1zm1.958 1-.846 10.58a1 1 0 0 1-.997.92h-6.23a1 1 0 0 1-.997-.92L3.042 3.5zm-7.487 1a.5.5 0 0 1 .528.47l.5 8.5a.5.5 0 0 1-.998.06L5 5.03a.5.5 0 0 1 .47-.53Zm5.058 0a.5.5 0 0 1 .47.53l-.5 8.5a.5.5 0 1 1-.998-.06l.5-8.5a.5.5 0 0 1 .528-.47M8 4.5a.5.5 0 0 1 .5.5v8.5a.5.5 0 0 1-1 0V5a.5.5 0 0 1 .5-.5" />
+                    </svg>
+                    <span className="styleComponent-comment-dropdown-buttons">
+                      Delete
+                    </span>
+                  </button>
+                </Dropdown.Menu>
+              </Dropdown>
+            )}
+          </div>
+          <div className="styleComponent-comment-body">
+            {showEditForm ? (
+              <div className="edit-comment-form">
+                <Formik
+                  enableReinitialize={true}
+                  initialValues={editCommentForm}
+                  onSubmit={onEditCommentSubmit}
+                  validationSchema={commentSchema}
+                >
+                  <Form>
+                    <div className="form-group">
+                      <label htmlFor="subject">Subject:</label>
+                      <Field
+                        className="form-control"
+                        type="text"
+                        name="subject"
+                        placeholder="enter a title"
+                      />
+                      <ErrorMessage
+                        name="subject"
+                        component="div"
+                        className="has-error"
+                      />
+                    </div>
+                    <br />
+                    <div className="form-group">
+                      <label htmlFor="text">text:</label>
+                      <Field
+                        className="form-control"
+                        type="text"
+                        name="text"
+                        placeholder="enter a comment"
+                      />
+                      <ErrorMessage
+                        name="text"
+                        component="div"
+                        className="has-error"
+                      />
+                    </div>
+                    <div className="button-style">
+                      <Button
+                        size="sm"
+                        className="reply-button-style"
+                        type="submit"
+                      >
+                        submit
+                      </Button>
+                      <Button size="sm" onClick={onEditClick}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </Form>
+                </Formik>
+              </div>
+            ) : (
+              <div className="comment-info">
+                <h4 className="subject">{aComment.subject}</h4>
+                <p className="text">{aComment.text}</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="reply-body">{replyData.replyComponents}</div>
+        <div className="reply-form">
+          <Card.Img
+            className="styleComponent-user-image"
+            variant="top"
+            src={aComment.createdBy?.avatarUrl}
+          />
+          <div className="repliesForm">
+            <RepliesForm
+              entity={props.entity}
+              aReply={aComment}
+              addReplyHandler={addReplyHandler}
+              updateReplyHandler={updateReplyHandler}
+            />
+          </div>
+        </div>
+      </Container>
+    </React.Fragment>
+  );
+}
+CommentCard.propTypes = {
+  comment: propTypes.shape({
+    createdBy: propTypes.shape({
+      id: propTypes.number.isRequired,
+      avatarUrl: propTypes.string,
+      firstName: propTypes.string.isRequired,
+      lastName: propTypes.string.isRequired,
+    }),
+    subject: propTypes.string.isRequired,
+    text: propTypes.string.isRequired,
+    dateCreated: propTypes.string.isRequired,
+    id: propTypes.number.isRequired,
+  }),
+  entity: propTypes.shape({
+    entityTypeId: propTypes.number.isRequired,
+    entityId: propTypes.number.isRequired,
+  }),
+  userLoggedIn: propTypes.shape({
+    id: propTypes.number.isRequired,
+  }),
+  onCommentDelete: propTypes.func,
+  commentUpdateHandler: propTypes.func,
+};
+export default CommentCard;

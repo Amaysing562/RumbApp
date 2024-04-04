@@ -1,0 +1,69 @@
+USE [RumbApp]
+GO
+/****** Object:  StoredProcedure [dbo].[Comments_Update]    Script Date: 4/3/2024 5:10:13 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author: <Adrean Mays>
+-- Create date: <12/16/2023>
+-- Description: <Proc for Updating Comments table information>
+-- Code Reviewer: Mike Henry
+
+-- MODIFIED BY:
+-- MODIFIED DATE:12/1/2020
+-- Code Reviewer:
+-- Note:
+-- =============================================
+
+ALTER proc [dbo].[Comments_Update]
+		@Subject nvarchar(50)
+		,@Text nvarchar(3000)
+		,@ParentId int
+		,@EntityTypeId int
+		,@EntityId int
+		,@ModifiedBy int
+		,@IsDeleted bit
+		,@Id int
+as
+/* --------------------Test code
+
+Declare 
+		@Subject nvarchar(50) = 'Upadted subject'
+		,@Text nvarchar(3000) = ' changed comment'
+		,@ParentId int = 1
+		,@EntityTypeId int = 2
+		,@EntityId int = 1
+		,@ModifiedBy int = 2
+		,@IsDeleted bit = 0
+		,@Id int = 3
+
+Execute dbo.Comments_Update
+		@Subject
+		,@Text
+		,@ParentId
+		,@EntityTypeId
+		,@EntityId
+		,@ModifiedBy
+		,@IsDeleted
+		,@Id
+
+
+*/
+
+BEGIN
+
+
+UPDATE dbo.Comments
+	SET [Subject] = @Subject
+		,[Text] = @Text
+		,[ParentId] = @ParentId
+		,[EntityTypeId] = @EntityTypeId
+		,[EntityId] = @EntityId
+		,[ModifiedBy] = @ModifiedBy
+		,[IsDeleted] = @IsDeleted
+
+	WHERE Id = @Id
+
+END

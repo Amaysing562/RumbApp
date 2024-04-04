@@ -1,0 +1,61 @@
+import axios from "axios";
+import * as helper from "../services/serviceHelpers";
+import debug from "debug";
+import { onGlobalError, onGlobalSuccess } from "./serviceHelpers";
+
+const _logger = debug.extend("comments");
+
+const commentService = {
+  endpoint: `${helper.API_HOST_PREFIX}/api/comments`,
+};
+
+commentService.add = (commentData) => {
+  _logger("commentData:", commentData);
+  const config = {
+    method: "POST",
+    url: `${commentService.endpoint}`,
+    data: commentData,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+commentService.update = (id, commentData) => {
+  _logger("update commentData:", commentData);
+  const config = {
+    method: "PUT",
+    url: `${commentService.endpoint}/${id}`,
+    data: commentData,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+commentService.delete = (id) => {
+  _logger("Delete comment:", id);
+  const config = {
+    method: "PUT",
+    url: `${commentService.endpoint}/delete/${id}`,
+    data: { isDeleted: true },
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+commentService.getByEntityId = (id) => {
+  const config = {
+    method: "GET",
+    url: `${commentService.endpoint}/${id}`,
+    withCredentials: true,
+    crossdomain: true,
+    headers: { "Content-Type": "application/json" },
+  };
+
+  return axios(config).then(onGlobalSuccess).catch(onGlobalError);
+};
+
+export default commentService;

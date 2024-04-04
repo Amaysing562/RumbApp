@@ -1,0 +1,95 @@
+import React, { useState } from "react";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import Button from "react-bootstrap/Button";
+import debug from "debug";
+import basicSchema from "../../schemas/commentsSchema";
+import propTypes from "prop-types";
+
+const _logger = debug.extend("commentsForm");
+const commentSchema = basicSchema;
+
+function CommentsForm(props) {
+  const entityTypeId = props.entity.entityTypeId;
+  const entityId = props.entity.entityId;
+
+  const [form, setForm] = useState({
+    subject: "",
+    text: "",
+    entityTypeId,
+    entityId,
+    isDeleted: false,
+  });
+
+  const handleSubmit = (values, { resetForm }) => {
+    _logger("comment values", values);
+    props.addHandler(values);
+
+    setForm({
+      subject: "",
+      text: "",
+      entityTypeId: props.entity.entityTypeId,
+      entityId: props.entity.entityId,
+      isDeleted: false,
+    });
+    resetForm((values = ""));
+  };
+
+  return (
+    <div className="container card">
+      <div className="row styleComponent-comment-form">
+        <div className="col-4">
+          <Formik
+            enableReinitialize={true}
+            initialValues={form}
+            onSubmit={handleSubmit}
+            validationSchema={commentSchema}
+          >
+            <Form>
+              <div className="form-group">
+                <label htmlFor="subject">Subject:</label>
+                <Field
+                  className="form-control"
+                  type="text"
+                  name="subject"
+                  placeholder="enter a title"
+                />
+                <ErrorMessage
+                  name="subject"
+                  component="div"
+                  className="has-error"
+                />
+              </div>
+              <br />
+              <div className="form-group">
+                <label htmlFor="text">text:</label>
+                <Field
+                  className="form-control"
+                  type="text"
+                  name="text"
+                  placeholder="enter a comment"
+                />
+                <ErrorMessage
+                  name="text"
+                  component="div"
+                  className="has-error"
+                />
+              </div>
+              <br />
+              <Button type="submit">submit</Button>
+            </Form>
+          </Formik>
+        </div>
+      </div>
+    </div>
+  );
+}
+CommentsForm.propTypes = {
+  entity: propTypes.shape({
+    entityTypeId: propTypes.number.isRequired,
+    entityId: propTypes.number.isRequired,
+  }),
+  addHandler: propTypes.func,
+  updateHandler: propTypes.func,
+};
+
+export default CommentsForm;

@@ -1,0 +1,81 @@
+.style-user-name {
+  margin-top: 15px;
+  font-weight: bold;
+  color: black;
+  font-size: large;
+}
+.styleComment-scroll-container {
+  overflow-y: scroll;
+  height: 500px;
+  border: "1px solid #ccc";
+  border-radius: 5%;
+}
+.comment-title {
+  color: #754ffe;
+}
+.style-comment {
+  border-bottom: 2px solid black;
+}
+.has-error {
+  width: 100%;
+  margin-top: 0.25rem;
+  font-size: 80%;
+  color: red;
+}
+.styleComponent-comment-body {
+  margin-top: 10px;
+  margin-left: 25px;
+}
+.styleComponent-comment-date-made {
+  margin-left: 20px;
+  margin-top: 15px;
+}
+.styleComponent-comment-display {
+  margin: 25px 2px;
+}
+.styleComponent-comment-dropdown-buttons {
+  margin-left: 10px;
+}
+.styleComponent-comment-form {
+  margin: 10px;
+  padding: 10px;
+}
+.styleComponent-dropdown {
+  margin: 5px;
+  margin-left: auto;
+}
+.styleComponent-user-image {
+  width: 40px;
+  height: 40px;
+  margin: 10px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.styleComponent-comment-user-info {
+  margin-top: 10px;
+  display: flex;
+}
+.styleComment-hr {
+  border: 1px solid black;
+}
+.comment-body {
+  margin-left: 15px;
+}
+.reply-container {
+  margin-left: 10%;
+  border-bottom: 2px solid black;
+}
+.repliesForm {
+  margin-top: 15px;
+}
+.reply-form {
+  display: flex;
+}
+.button-style {
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+.reply-button-style {
+  margin-right: 5px;
+}

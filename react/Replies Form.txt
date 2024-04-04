@@ -1,0 +1,88 @@
+import React, { useState } from "react";
+import { Formik, Form, Field } from "formik";
+import Button from "react-bootstrap/Button";
+import "../styleComments.css";
+import debug from "debug";
+import basicSchema from "schemas/commentsSchema";
+import propTypes from "prop-types";
+
+const _logger = debug.extend("commentsReply");
+const replySchema = basicSchema;
+function RepliesForm(props) {
+  const entityTypeId = props.entity.entityTypeId;
+  const entityId = props.entity.entityId;
+  const aReply = props.aReply;
+  const [replyForm, setReplyForm] = useState({
+    subject: aReply.subject,
+    text: "",
+    parentId: aReply.id,
+    entityTypeId,
+    entityId,
+    isDeleted: false,
+  });
+
+  const submitReply = (values, { resetForm }) => {
+    _logger("Submit is firing", values);
+    props.addReplyHandler(values);
+
+    setReplyForm({
+      subject: aReply.subject,
+      text: "",
+      parentId: aReply.id,
+      entityTypeId,
+      entityId,
+      isDeleted: false,
+    });
+
+    resetForm((values = ""));
+  };
+
+  return (
+    <div>
+      <Formik
+        enableReinitialize={true}
+        initialValues={replyForm}
+        onSubmit={submitReply}
+        validationSchema={replySchema}
+      >
+        <Form>
+          <Field
+            className="form-control"
+            name="text"
+            type="text"
+            placeholder="enter a comment"
+          />
+          <div className="button-style">
+            <Button type="submit" size="sm">
+              Reply
+            </Button>
+          </div>
+        </Form>
+      </Formik>
+    </div>
+  );
+}
+RepliesForm.propTypes = {
+  aReply: propTypes.shape({
+    createdBy: propTypes.shape({
+      id: propTypes.number.isRequired,
+      avatarUrl: propTypes.string,
+      firstName: propTypes.string.isRequired,
+      lastName: propTypes.string.isRequired,
+    }),
+    parentId: propTypes.number,
+    subject: propTypes.string.isRequired,
+    text: propTypes.string.isRequired,
+    dateCreated: propTypes.string.isRequired,
+    id: propTypes.number.isRequired,
+    isDeleted: propTypes.bool,
+  }),
+  entity: propTypes.shape({
+    entityTypeId: propTypes.number.isRequired,
+    entityId: propTypes.number.isRequired,
+  }),
+  addReplyHandler: propTypes.func,
+  updateReplyHandler: propTypes.func,
+  onEditReplySubmit: propTypes.func,
+};
+export default RepliesForm;
